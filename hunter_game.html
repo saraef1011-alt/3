@@ -113,7 +113,7 @@ kbd{background:#fff2;border:1px solid #fff5;border-radius:5px;padding:0 6px;font
 .pb.sh.charging{filter:brightness(.4)}
 .pb.sh.active{background:#134a7acc;border-color:#7fe3ff}
 .pb.cool{filter:brightness(.45)}
-#padL{flex-direction:column}
+#padL{flex-direction:column}#padL{flex-wrap:wrap;max-width:88px}#pLeft,#pRight{font-size:24px}
 #padR{flex-direction:column}
 #loading{position:fixed;inset:0;background:#120a06;z-index:100;display:flex;align-items:center;justify-content:center;font-size:22px}
 </style>
@@ -125,7 +125,7 @@ kbd{background:#fff2;border:1px solid #fff5;border-radius:5px;padding:0 6px;font
 </defs></svg>
 <div id="app">
   <div id="bgfill"></div>
-  <div class="pad" id="padL"><button class="pb" id="pUp">▲</button><button class="pb" id="pDn">▼</button></div>
+  <div class="pad" id="padL"><button class="pb" id="pLeft">◀</button><button class="pb" id="pUp">▲</button><button class="pb" id="pDn">▼</button><button class="pb" id="pRight">▶</button></div>
   <div id="wrap"><div id="stage">
     <img id="cave" alt="">
     <div id="tint"></div>
@@ -184,7 +184,7 @@ kbd{background:#fff2;border:1px solid #fff5;border-radius:5px;padding:0 6px;font
    <li><b>سپر</b>: ۳ ثانیه روشن می‌ماند، بعد ۶ ثانیه شارژ می‌شود (دکمه تیره است). با سپر نمی‌شود شلیک کرد.</li>
    <li>برای جاخالی دادن بالا و پایین برو. صخره‌ها جلوی گلوله‌ها را می‌گیرند و بعد از چند ضربه می‌شکنند.</li>
    <li>کیبورد: <kbd>↑</kbd><kbd>↓</kbd> یا <kbd>W</kbd><kbd>S</kbd> حرکت عمودی، <kbd>←</kbd><kbd>→</kbd> یا <kbd>A</kbd><kbd>D</kbd> راه رفتن افقی، <kbd>Space</kbd> شلیک، <kbd>E</kbd> / <kbd>Shift</kbd> سپر، <kbd>1</kbd> تفنگ، <kbd>2</kbd> شمشیر، <kbd>P</kbd> توقف، <kbd>M</kbd> صدا.</li>
-   <li>موبایل: دکمه‌های روی صفحه. دکمه‌های اصلی داخل صحنه هم کار می‌کنند.</li>
+   <li>موبایل: دکمه‌های روی صفحه برای حرکت چهارجهته و دکمه‌های اصلی داخل صحنه.</li>
    <li>با شکست دشمن، مرحلهٔ بعد باز می‌شود و به منوی مراحل برمی‌گردی. پیشرفت ذخیره می‌شود.</li></ul>
   <button class="btn go" id="heClose">بستن</button></div></div>
 <div id="loading">در حال بارگذاری…</div>
@@ -437,8 +437,8 @@ function applyMove(dt){
  let vy=0,vx=0;
  if(k.ArrowUp||k.w||k.W||G.padUp)vy-=1;
  if(k.ArrowDown||k.s||k.S||G.padDn)vy+=1;
- if(k.ArrowLeft||k.a||k.A)vx-=1;
- if(k.ArrowRight||k.d||k.D)vx+=1;
+ if(k.ArrowLeft||k.a||k.A||G.padLeft)vx-=1;
+ if(k.ArrowRight||k.d||k.D||G.padRight)vx+=1;
  const can=(canAct()||G.phase==='intro');
  const ty=can?vy:0,tx=can?vx:0;
  G.hvel=lerp(G.hvel,ty*240,clamp(dt*14,0,1));
@@ -573,11 +573,11 @@ addEventListener('keydown',ev=>{ac();const k=ev.key;
  else if(k==='p'||k==='P'||k==='Escape')togglePause();
  else if(k==='m'||k==='M')toggleSound()});
 addEventListener('keyup',ev=>{G.keys[ev.key]=false});
-addEventListener('blur',()=>{G.keys={};G.padUp=G.padDn=false;if(G.screen==='play')togglePause2()});
+addEventListener('blur',()=>{G.keys={};G.padUp=G.padDn=G.padLeft=G.padRight=false;if(G.screen==='play')togglePause2()});
 function togglePause2(){if(!G.paused&&(G.phase==='play'||G.phase==='intro'))togglePause()}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)togglePause2()});
 function hold(btn,set){const on=e=>{e.preventDefault();ac();set(true);btn.classList.add('down');try{btn.setPointerCapture(e.pointerId)}catch(_){}},off=e=>{set(false);btn.classList.remove('down')};btn.addEventListener('pointerdown',on);btn.addEventListener('pointerup',off);btn.addEventListener('pointercancel',off);btn.addEventListener('lostpointercapture',off)}
-hold($('pUp'),v=>G.padUp=v);hold($('pDn'),v=>G.padDn=v);
+hold($('pUp'),v=>G.padUp=v);hold($('pDn'),v=>G.padDn=v);hold($('pLeft'),v=>G.padLeft=v);hold($('pRight'),v=>G.padRight=v);
 const press=(el,fn)=>el.addEventListener('pointerdown',e=>{e.preventDefault();ac();fn()});
 press($('bBullet'),fire);press($('pFire'),fire);
 press($('bShield'),useShield);press($('pShield'),useShield);
