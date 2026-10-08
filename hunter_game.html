@@ -19,6 +19,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:#120a06;font-family:Ta
 #hunter.dead{transition:transform 1s ease-in,filter 1s;filter:grayscale(1) brightness(.7)}
 #enemy.hit{animation:hitf .3s}
 #hunter.hit{animation:hitf .35s}
+#hunter.walking{animation:hunterWalk .18s steps(2,end) infinite}
+@keyframes hunterWalk{0%{margin-top:0}50%{margin-top:-3px}100%{margin-top:0}}
 @keyframes hitf{0%,100%{filter:none}30%{filter:brightness(2.6) saturate(.3)}}
 #hunter.inv{animation:blink .15s steps(2) infinite}
 @keyframes blink{50%{opacity:.35}}
@@ -181,7 +183,7 @@ kbd{background:#fff2;border:1px solid #fff5;border-radius:5px;padding:0 6px;font
    <li><b>تفنگ</b>: گلولهٔ سریع و باریک. <b>شمشیر</b>: موج جادویی کندتر ولی پهن‌تر.</li>
    <li><b>سپر</b>: ۳ ثانیه روشن می‌ماند، بعد ۶ ثانیه شارژ می‌شود (دکمه تیره است). با سپر نمی‌شود شلیک کرد.</li>
    <li>برای جاخالی دادن بالا و پایین برو. صخره‌ها جلوی گلوله‌ها را می‌گیرند و بعد از چند ضربه می‌شکنند.</li>
-   <li>کیبورد: <kbd>↑</kbd><kbd>↓</kbd> یا <kbd>W</kbd><kbd>S</kbd> حرکت، <kbd>Space</kbd> شلیک، <kbd>E</kbd> / <kbd>Shift</kbd> سپر، <kbd>1</kbd> تفنگ، <kbd>2</kbd> شمشیر، <kbd>P</kbd> توقف، <kbd>M</kbd> صدا.</li>
+   <li>کیبورد: <kbd>↑</kbd><kbd>↓</kbd> یا <kbd>W</kbd><kbd>S</kbd> حرکت عمودی، <kbd>←</kbd><kbd>→</kbd> یا <kbd>A</kbd><kbd>D</kbd> راه رفتن افقی، <kbd>Space</kbd> شلیک، <kbd>E</kbd> / <kbd>Shift</kbd> سپر، <kbd>1</kbd> تفنگ، <kbd>2</kbd> شمشیر، <kbd>P</kbd> توقف، <kbd>M</kbd> صدا.</li>
    <li>موبایل: دکمه‌های روی صفحه. دکمه‌های اصلی داخل صحنه هم کار می‌کنند.</li>
    <li>با شکست دشمن، مرحلهٔ بعد باز می‌شود و به منوی مراحل برمی‌گردی. پیشرفت ذخیره می‌شود.</li></ul>
   <button class="btn go" id="heClose">بستن</button></div></div>
