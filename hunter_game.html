@@ -206,7 +206,7 @@ function putSave(){mem=SAVE;try{localStorage.setItem(KEY,JSON.stringify(SAVE))}c
 putSave();
 
 /* ---------- constants ---------- */
-const GROUND=358, HOFF_MAX=80, EOFF_MAX=60;
+const GROUND=358, HOFF_MAX=80, EOFF_MAX=60, HMIN=18, HMAX=178;
 const HB={x1:40,x2:150,y1:238,y2:338}, EB={x1:358,x2:462,y1:215,y2:350};
 const RIFLE_M={x:148,y:244}, SWORD_M={x:165,y:240};
 const ETYPES=[
@@ -224,16 +224,16 @@ const TYPES=[];{let prev=-1;for(let n=1;n<=100;n++){const r=mulberry(SAVE.world*
 function genLevel(n){
  n=clamp(n|0,1,100);const r=mulberry(SAVE.world*17+n*7919+3),t=(n-1)/99;
  const et=ETYPES[TYPES[n]];
- const p2=clamp((n-8)/60,0,.6),p3=clamp((n-35)/80,0,.55);
+ const p2=clamp((n-6)/45,0,.82),p3=clamp((n-25)/55,0,.78);
  const amp=lerp(0,EOFF_MAX-5,clamp((n-3)/40,0,1));
  const L={n,type:TYPES[n],et,
-  interval:lerp(3.4,1.0,Math.pow(t,.85)),speed:lerp(170,430,t)*et.spd,p2,p3,
+  interval:lerp(3.6,.55,Math.pow(t,.78)),speed:lerp(170,520,Math.pow(t,.9))*et.spd,p2,p3,
   lead:lerp(0,.8,clamp((n-15)/70,0,1)),amp,pspeed:amp>0?lerp(45,130,clamp((n-3)/60,0,1)):0,
-  dodgeP:clamp((n-25)/150,0,.4),windup:lerp(.6,.34,t),
+  dodgeP:clamp((n-18)/95,0,.62),windup:lerp(.65,.24,t),
   bg:BGS[Math.floor(r()*BGS.length)],rocks:[],crys:[]};
- const nr=n<4?0:Math.floor(r()*(Math.min(3,1+Math.floor(n/25))+1));
+ const nr=n<4?0:Math.floor(r()*(Math.min(4,1+Math.floor(n/18))+1));
  const xs=[];for(let i=0;i<nr;i++){let x,tries=0;do{x=215+r()*105;tries++}while(xs.some(q=>Math.abs(q-x)<48)&&tries<30);xs.push(x);
-  L.rocks.push({x,w:36+r()*22,h:80+r()*95,hp:2+Math.floor(r()*2)})}
+  L.rocks.push({x,w:36+r()*22,h:80+r()*95,hp:2+Math.floor(r()*(n>=60?3:2))})}
  const nc=3+Math.floor(r()*4);for(let i=0;i<nc;i++)L.crys.push({x:180+r()*170,y:335+r()*18,s:12+r()*14,c:CCOL[Math.floor(r()*CCOL.length)],rot:(r()-.5)*40});
  return L}
 
@@ -278,7 +278,7 @@ const diaImg=new Image();diaImg.src=ASSETS.diamond;
 
 /* ---------- state ---------- */
 const G={screen:'boot',phase:'none',L:null,t:0,
- hoff:0,hvel:0,hp:6,hinv:0,weapon:'sword',cd:0,recoil:0,
+ hoff:0,hvel:0,hx:0,hvx:0,hp:6,hinv:0,weapon:'sword',cd:0,recoil:0,
  sh:{st:'ready',t:0},
  e:{hp:4,off:0,tgt:0,tt:0,next:2,wind:0,queue:[],dash:0,dashCd:0,aim:null,dying:0,x:0},
  proj:[],parts:[],rings:[],rocks:[],keys:{},padUp:false,padDn:false,phaseT:0,shake:0,paused:false};
@@ -342,7 +342,7 @@ function openMain(){setScreen('main');G.phase='none';$('mmPlay').textContent=`�
 
 /* ---------- level start ---------- */
 function startLevel(n){
- const L=genLevel(n);G.L=L;G.t=0;G.hp=6;G.hinv=0;G.hoff=0;G.hvel=0;G.cd=0;G.recoil=0;
+ const L=genLevel(n);G.L=L;G.t=0;G.hp=6;G.hinv=0;G.hoff=0;G.hvel=0;G.hx=0;G.hvx=0;G.cd=0;G.recoil=0;
  G.sh={st:'ready',t:0};
  const e=G.e;e.hp=4;e.off=0;e.tgt=0;e.tt=1;e.next=L.interval*.9+1.3;e.wind=0;e.queue=[];e.dash=0;e.dashCd=0;e.aim=null;e.dying=0;
  G.proj=[];G.parts=[];G.rings=[];G.shake=0;G.paused=false;
@@ -395,13 +395,13 @@ function updateButtons(){
 
 /* ---------- fire ---------- */
 function fire(){if(!canAct()||G.cd>0||G.sh.st==='active')return false;
- if(G.weapon==='rifle'){G.proj.push({own:'p',kind:'bullet',x:RIFLE_M.x+2,y:RIFLE_M.y-G.hoff,vx:560,vy:0,r:8,t:0});G.cd=.55;SFX.shoot();burst(RIFLE_M.x+8,RIFLE_M.y-G.hoff,'#ffd36a',8,160,2.5,.2)}
- else{G.proj.push({own:'p',kind:'wave',x:SWORD_M.x,y:SWORD_M.y-G.hoff,vx:300,vy:0,r:28,t:0});G.cd=1.0;SFX.wave();burst(SWORD_M.x,SWORD_M.y-G.hoff,'#c8a2ff',10,150,3,.3)}
- G.recoil=.14;updateButtons();return true}
+ if(G.weapon==='rifle'){G.proj.push({own:'p',kind:'bullet',x:RIFLE_M.x+2+G.hx,y:RIFLE_M.y-G.hoff,vx:560,vy:0,r:8,t:0});G.cd=.55;SFX.shoot();burst(RIFLE_M.x+8,RIFLE_M.y-G.hoff,'#ffd36a',8,160,2.5,.2)}
+ else{G.proj.push({own:'p',kind:'wave',x:SWORD_M.x+G.hx,y:SWORD_M.y-G.hoff,vx:300,vy:0,r:28,t:0});G.cd=1.0;SFX.wave();burst(SWORD_M.x,SWORD_M.y-G.hoff,'#c8a2ff',10,150,3,.3)}
+ G.recoil=.14;hunterEl.classList.add('walking');setTimeout(()=>hunterEl.classList.remove('walking'),180);updateButtons();return true}
 
 /* ---------- enemy attack ---------- */
 function eOrigin(){return{x:352,y:300-G.e.off}}
-function hCenter(){return{x:(HB.x1+HB.x2)/2,y:(HB.y1+HB.y2)/2-G.hoff}}
+function hCenter(){return{x:(HB.x1+HB.x2)/2+G.hx,y:(HB.y1+HB.y2)/2-G.hoff}}
 function launch(angOff=0){const L=G.L,o=eOrigin(),h=hCenter();let ty=h.y+G.hvel*L.lead*.55;ty=clamp(ty,HB.y1-G.hoff-10,HB.y2-G.hoff+10);
  let ang=Math.atan2(ty-o.y,h.x-o.x)+angOff;const sp=L.speed;
  const et=L.et;G.proj.push({own:'e',kind:et.kind,x:o.x,y:o.y,by:o.y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,r:et.r,t:0,spin:0,ph:Math.random()*6,home:et.kind==='shadow'?1:0});
@@ -431,10 +431,23 @@ function showLoss(){const c=$('resCard');c.innerHTML=`<h2 style="color:#ff6a6a">
 /* ---------- simulation ---------- */
 function circRect(cx,cy,r,x1,y1,x2,y2){const dx=cx-clamp(cx,x1,x2),dy=cy-clamp(cy,y1,y2);return dx*dx+dy*dy<=r*r}
 function applyMove(dt){
- let dir=0;const k=G.keys;if(k.ArrowUp||k.w||k.W||G.padUp)dir-=0,dir+=1;if(k.ArrowDown||k.s||k.S||G.padDn)dir-=1;
- const can=canAct()&&G.phase==='play'||G.phase==='intro';
- const target=can?dir:0;G.hvel=lerp(G.hvel,target*240,clamp(dt*14,0,1));
- G.hoff=clamp(G.hoff+G.hvel*dt,0,HOFF_MAX);if((G.hoff===0&&G.hvel<0)||(G.hoff===HOFF_MAX&&G.hvel>0))G.hvel=0}
+ const k=G.keys;
+ let vy=0,vx=0;
+ if(k.ArrowUp||k.w||k.W||G.padUp)vy-=1;
+ if(k.ArrowDown||k.s||k.S||G.padDn)vy+=1;
+ if(k.ArrowLeft||k.a||k.A)vx-=1;
+ if(k.ArrowRight||k.d||k.D)vx+=1;
+ const can=(canAct()||G.phase==='intro');
+ const ty=can?vy:0,tx=can?vx:0;
+ G.hvel=lerp(G.hvel,ty*240,clamp(dt*14,0,1));
+ G.hvx=lerp(G.hvx,tx*185,clamp(dt*12,0,1));
+ G.hoff=clamp(G.hoff+G.hvel*dt,0,HOFF_MAX);
+ G.hx=clamp(G.hx+G.hvx*dt,HMIN,HMAX);
+ if((G.hoff===0&&G.hvel<0)||(G.hoff===HOFF_MAX&&G.hvel>0))G.hvel=0;
+ if((G.hx===HMIN&&G.hvx<0)||(G.hx===HMAX&&G.hvx>0))G.hvx=0;
+ const moving=Math.abs(G.hvel)>8||Math.abs(G.hvx)>8;
+ hunterEl.classList.toggle('walking',moving&&G.phase==='play');
+}
 function stepOnce(dt){
  const L=G.L,e=G.e;G.t+=dt;
  applyMove(dt);
@@ -485,7 +498,7 @@ function stepOnce(dt){
    if(G.e.hp>0&&G.phase==='play'&&circRect(p.x,p.y,p.r,EB.x1,EB.y1-G.e.off,EB.x2,EB.y2-G.e.off)){p.dead=true;hitEnemy(p.x,p.y)}}
   else{
    if(G.sh.st==='active'&&circRect(p.x,p.y,p.r,142-14,286-G.hoff-72,152+24,286-G.hoff+72)){p.dead=true;ring(p.x,p.y,'#7fe3ff',34);burst(p.x,p.y,'#9fe8ff',10,120,2.5,.3);SFX.block();floater(p.x,p.y-26,'سپر','#9fe8ff');continue}
-   if(G.phase==='play'&&circRect(p.x,p.y,p.r,HB.x1,HB.y1-G.hoff,HB.x2,HB.y2-G.hoff)){p.dead=true;hitHunter(p.x,p.y)}}
+   if(G.phase==='play'&&circRect(p.x,p.y,p.r,HB.x1+G.hx,HB.y1-G.hoff,HB.x2+G.hx,HB.y2-G.hoff)){p.dead=true;hitHunter(p.x,p.y)}}
  }
  G.proj=G.proj.filter(p=>!p.dead);
  for(const q of G.parts){q.life-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=(q.g||0)*dt}
@@ -505,7 +518,7 @@ function applyPos(){
  const e=G.e;const bob=Math.sin(performance.now()/450)*1.5;
  const rec=G.recoil>0?-5:0;
  let hy=-G.hoff;
- hunterEl.style.transform=G.phase==='lost'||G.phase==='lostdone'?`translate(${rec}px,${hy+40}px) rotate(-70deg)`:`translate(${rec}px,${hy+bob*.3}px)`;
+ hunterEl.style.transform=G.phase==='lost'||G.phase==='lostdone'?`translate(${G.hx+rec}px,${hy+40}px) rotate(-70deg)`:`translate(${G.hx+rec}px,${hy+bob*.3}px)`;
  hunterEl.style.transformOrigin='90px 340px';
  const wind=e.wind>0;
  if(!e.dying)enemyEl.style.transform=`translate(${wind?8:0}px,${-e.off+bob}px) ${wind?'rotate(4deg) scale(1.04)':''}`;
