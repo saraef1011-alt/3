@@ -253,6 +253,9 @@ const SFX={
  zap(){tone(520,.18,'square',.07,-380)},
  hit(){tone(140,.2,'square',.16,-90);noise(.15,.25,1200,200)},
  hurt(){tone(200,.3,'sawtooth',.16,-150);noise(.2,.3,900,150)},
+ toxicHit(){noise(.32,.32,180,900);tone(95,.42,'sawtooth',.18,-65);tone(62,.5,'triangle',.12,-25,.08)},
+ scream(){noise(.75,.25,700,4200);tone(260,.55,'sawtooth',.16,-210);tone(480,.4,'sawtooth',.1,-320,.12)},
+ rage(){tone(78,.75,'sawtooth',.2,-35);tone(112,.6,'square',.12,-65,.12);noise(.6,.24,250,1600)},
  block(){tone(1200,.25,'triangle',.14,-300);tone(1800,.12,'sine',.08)},
  shOn(){tone(400,.35,'sine',.14,500);tone(800,.3,'triangle',.07,300,.05)},
  shOff(){tone(500,.25,'sine',.1,-250)},
@@ -346,7 +349,7 @@ function openMain(){setScreen('main');G.phase='none';$('mmPlay').textContent=`�
 function startLevel(n){
  const L=genLevel(n);G.L=L;G.t=0;G.hp=6;G.hinv=0;G.hoff=0;G.hvel=0;G.hx=0;G.hvx=0;G.cd=0;G.recoil=0;
  G.sh={st:'ready',t:0};
- const e=G.e;e.hp=4;e.off=0;e.tgt=0;e.tt=1;e.next=L.interval*.9+1.3;e.wind=0;e.queue=[];e.dash=0;e.dashCd=0;e.aim=null;e.dying=0;
+ const e=G.e;e.hp=4;e.off=0;e.tgt=0;e.tt=1;e.next=L.interval*.9+1.3;e.wind=0;e.queue=[];e.dash=0;e.dashCd=0;e.aim=null;e.dying=0;e.rage=false;e.roarCd=0;
  G.proj=[];G.parts=[];G.rings=[];G.shake=0;G.paused=false;
  enemyEl.className='';hunterEl.className='';enemyImg.style.filter=L.et.filter;
  $('tint').style.background='';$('cave').style.filter=L.bg;
@@ -407,10 +410,10 @@ function hCenter(){return{x:(HB.x1+HB.x2)/2+G.hx,y:(HB.y1+HB.y2)/2-G.hoff}}
 function launch(angOff=0){const L=G.L,o=eOrigin(),h=hCenter();let ty=h.y+G.hvel*L.lead*.55;ty=clamp(ty,HB.y1-G.hoff-10,HB.y2-G.hoff+10);
  let ang=Math.atan2(ty-o.y,h.x-o.x)+angOff;const sp=L.speed;
  const et=L.et;G.proj.push({own:'e',kind:et.kind,x:o.x,y:o.y,by:o.y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,r:et.r,t:0,spin:0,ph:Math.random()*6,home:et.kind==='shadow'?1:0});
- SFX.zap();burst(o.x,o.y,et.fx,6,90,2.5,.25)}
-function startAttack(){const L=G.L,e=G.e,r=Math.random();let c=1+(r<L.p3?2:r<L.p2?1:0);
+ if(G.e.rage){tone(155,.12,'sawtooth',.08,-80);noise(.12,.12,900,2200)}else if(et.kind==='toxic'){tone(170,.16,'triangle',.08,-90);noise(.14,.16,500,1800)}else if(et.kind==='shadow'){tone(120,.24,'sawtooth',.07,-70)}else if(et.kind==='fire'){noise(.14,.18,500,1600)}else if(et.kind==='ice'){tone(880,.1,'sine',.07,-500)}else{SFX.zap()}burst(o.x,o.y,et.fx,6,90,2.5,.25)}
+function startAttack(){const L=G.L,e=G.e,r=Math.random();let c=1+(r<L.p3?2:r<L.p2?1:0);if(e.rage)c=Math.min(5,c+1);
  e.wind=L.windup;e.aim={y:hCenter().y};e.queue=[];SFX.windup();
- const k=L.et.kind,fan=(k==='fire'||k==='ice');
+ const k=L.et.kind,fan=(k==='fire'||k==='ice'||e.rage);
  if(fan&&c>1){const offs=c===2?[-.09,.09]:[-.17,0,.17];e.queue=offs.map(a=>({t:0,a}))}
  else for(let i=0;i<c;i++)e.queue.push({t:i*.3,a:0})}
 
@@ -463,15 +466,17 @@ function stepOnce(dt){
  // enemy
  if(G.phase==='intro'){G.phaseT-=dt;if(G.phaseT<=0){G.phase='play';hideBanner()}}
  if(G.phase==='play'){
+  if(!e.rage&&e.hp<=2){e.rage=true;e.roarCd=2;SFX.rage();G.shake=Math.max(G.shake,.55);flashScr('#7d001b',.38);ring(410,260-e.off,'#ff174d',95);burst(410,260-e.off,'#ff174d',28,180,4,.7);banner('هاگی خشمگین شد!','حمله‌هایش سریع‌تر و خطرناک‌تر شدند','#ff3f65',1.8)}
+  if(e.rage){e.roarCd-=dt;if(e.roarCd<=0&&Math.random()<dt*.55){SFX.scream();e.roarCd=4+Math.random()*3}}
   e.tt-=dt;if(e.tt<=0&&L.amp>0&&e.dash<=0){e.tgt=Math.random()*L.amp;e.tt=.8+Math.random()*.9}
-  const sp=(e.dash>0?420:L.pspeed);const d=e.tgt-e.off;e.off+=clamp(d,-sp*dt,sp*dt);
+  const sp=(e.dash>0?420:e.rage?Math.min(250,L.pspeed*1.45):L.pspeed);const d=e.tgt-e.off;e.off+=clamp(d,-sp*dt,sp*dt);
   if(e.dash>0)e.dash-=dt;if(e.dashCd>0)e.dashCd-=dt;
   // dodge
   if(L.dodgeP>0&&e.dashCd<=0){for(const p of G.proj){if(p.own==='p'&&p.x>EB.x1-170&&p.x<EB.x1-20&&Math.abs(p.y-((EB.y1+EB.y2)/2-e.off))<80){e.dashCd=1.4;if(Math.random()<L.dodgeP){e.tgt=e.off>EOFF_MAX/2?Math.max(0,e.off-55):Math.min(EOFF_MAX,e.off+55);e.dash=.25;e.tt=1}break}}}
   e.off=clamp(e.off,0,EOFF_MAX);
   if(e.wind>0){e.wind-=dt;if(e.wind<=0){e.fireT=0}}
   if(e.wind<=0&&e.queue.length){for(const q of e.queue)q.t-=dt;while(e.queue.length&&e.queue[0].t<=0){const q=e.queue.shift();launch(q.a)}}
-  else if(e.wind<=0){e.next-=dt;if(e.next<=0){startAttack();e.next=L.interval*(.75+Math.random()*.5)+L.windup}}
+  else if(e.wind<=0){e.next-=dt;if(e.next<=0){startAttack();e.next=L.interval*(e.rage?.48:.75+Math.random()*.5)+L.windup}}
  }
  // projectiles
  const playing=G.phase==='play'||G.phase==='intro'||G.phase==='won'&&false;
@@ -500,7 +505,7 @@ function stepOnce(dt){
    if(G.e.hp>0&&G.phase==='play'&&circRect(p.x,p.y,p.r,EB.x1,EB.y1-G.e.off,EB.x2,EB.y2-G.e.off)){p.dead=true;hitEnemy(p.x,p.y)}}
   else{
    if(G.sh.st==='active'&&circRect(p.x,p.y,p.r,142-14,286-G.hoff-72,152+24,286-G.hoff+72)){p.dead=true;ring(p.x,p.y,'#7fe3ff',34);burst(p.x,p.y,'#9fe8ff',10,120,2.5,.3);SFX.block();floater(p.x,p.y-26,'سپر','#9fe8ff');continue}
-   if(G.phase==='play'&&circRect(p.x,p.y,p.r,HB.x1+G.hx,HB.y1-G.hoff,HB.x2+G.hx,HB.y2-G.hoff)){p.dead=true;hitHunter(p.x,p.y)}}
+   if(G.phase==='play'&&circRect(p.x,p.y,p.r,HB.x1+G.hx,HB.y1-G.hoff,HB.x2+G.hx,HB.y2-G.hoff)){p.dead=true;if(p.kind==='toxic')SFX.toxicHit();hitHunter(p.x,p.y);if(p.kind==='toxic'){burst(p.x,p.y,'#8dff6a',18,155,4,.5);ring(p.x,p.y,'#8dff6a',52);flashScr('#65ff39',.18)}}}
  }
  G.proj=G.proj.filter(p=>!p.dead);
  for(const q of G.parts){q.life-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=(q.g||0)*dt}
@@ -525,7 +530,7 @@ function applyPos(){
  const wind=e.wind>0;
  if(!e.dying)enemyEl.style.transform=`translate(${wind?8:0}px,${-e.off+bob}px) ${wind?'rotate(4deg) scale(1.04)':''}`;
  enemyEl.style.transformOrigin='410px 350px';
- enemyEl.style.filter=wind?`drop-shadow(0 0 12px ${G.L?G.L.et.col:'#fff'})`:'';
+ enemyEl.style.filter=G.e.rage?`drop-shadow(0 0 7px #ff174d) drop-shadow(0 0 20px #ff003c) saturate(1.7)`:wind?`drop-shadow(0 0 12px ${G.L?G.L.et.col:'#fff'})`:'';
  shfx.style.top=(286-G.hoff*0-85)+'px';
  sh.style.transform='';sh.style.top=(285.8-68.2)+'px';sh.style.left='142.2px';
  shfx.style.left='129px';
