@@ -476,7 +476,7 @@ function stepOnce(dt){
   e.off=clamp(e.off,0,EOFF_MAX);
   if(e.wind>0){e.wind-=dt;if(e.wind<=0){e.fireT=0}}
   if(e.wind<=0&&e.queue.length){for(const q of e.queue)q.t-=dt;while(e.queue.length&&e.queue[0].t<=0){const q=e.queue.shift();launch(q.a)}}
-  else if(e.wind<=0){e.next-=dt;if(e.next<=0){startAttack();e.next=L.interval*(e.rage?.48:.75+Math.random()*.5)+L.windup}}
+  else if(e.wind<=0){e.next-=dt;if(e.next<=0){startAttack();e.next=L.interval*(e.rage ? 0.48 : (0.75+Math.random()*0.5))+L.windup}}
  }
  // projectiles
  const playing=G.phase==='play'||G.phase==='intro'||G.phase==='won'&&false;
